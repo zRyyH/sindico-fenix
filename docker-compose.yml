@@ -1,0 +1,7 @@
+services:
+  frontend:
+    build: .
+    container_name: sindico-frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
