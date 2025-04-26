@@ -1,9 +1,11 @@
 // src/components/dashboard/HistoricoLeituras.js
-import { History, Download, FileText } from "lucide-react";
+import { History, Info } from "lucide-react";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
-import { downloadComprovantes } from "@/utils/download";
+import { useState } from "react";
 
 export default function HistoricoLeituras({ consumos }) {
+    const [showAllColumns, setShowAllColumns] = useState(false);
+
     return (
         <section className="glass-card-light backdrop-blur-md p-6 relative overflow-hidden rounded-xl border border-blue-900/40 animate-fade-in">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-bl-full"></div>
@@ -15,6 +17,13 @@ export default function HistoricoLeituras({ consumos }) {
                     </div>
                     <h2 className="text-xl font-bold text-white">Histórico de Leituras</h2>
                 </div>
+                <button
+                    className="flex items-center gap-1 px-3 py-1 text-sm bg-blue-900/30 hover:bg-blue-800/40 rounded-md text-blue-300 transition-colors"
+                    onClick={() => setShowAllColumns(!showAllColumns)}
+                >
+                    <Info size={16} />
+                    {showAllColumns ? "Menos detalhes" : "Mais detalhes"}
+                </button>
             </div>
 
             {consumos.length === 0 ? (
@@ -28,17 +37,33 @@ export default function HistoricoLeituras({ consumos }) {
                     <table className="min-w-full">
                         <thead>
                             <tr className="bg-gradient-to-r from-blue-900/50 to-indigo-900/50 text-blue-100 text-left">
-                                <th className="py-3 px-4 font-semibold">Data</th>
+                                <th className="py-3 px-4 font-semibold">Data Leitura</th>
                                 <th className="py-3 px-4 font-semibold">Referência</th>
+                                <th className="py-3 px-4 font-semibold">Leitura</th>
                                 <th className="py-3 px-4 font-semibold">Volume (m³)</th>
-                                <th className="py-3 px-4 font-semibold">Valor</th>
-                                <th className="py-3 px-4 font-semibold">Status</th>
-                                <th className="py-3 px-4 font-semibold">Comprovantes</th>
+                                {showAllColumns && (
+                                    <>
+                                        <th className="py-3 px-4 font-semibold">Consumo (m³)</th>
+                                        <th className="py-3 px-4 font-semibold">Residuo (m³)</th>
+                                    </>
+                                )}
+                                <th className="py-3 px-4 font-semibold">Base (R$)</th>
+                                {showAllColumns && (
+                                    <>
+                                        <th className="py-3 px-4 font-semibold">Residual</th>
+                                        <th className="py-3 px-4 font-semibold">Taxa</th>
+                                    </>
+                                )}
+                                <th className="py-3 px-4 font-semibold">Total (R$)</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-blue-900/20">
-                            {consumos.map((consumo) => (
-                                <HistoricoRow key={consumo.id} consumo={consumo} />
+                            {consumos.map((consumo, index) => (
+                                <HistoricoRow
+                                    key={index}
+                                    consumo={consumo}
+                                    showAllColumns={showAllColumns}
+                                />
                             ))}
                         </tbody>
                     </table>
@@ -48,46 +73,50 @@ export default function HistoricoLeituras({ consumos }) {
     );
 }
 
-function HistoricoRow({ consumo }) {
-    const comprovantes = consumo.leitura_concessionaria_id?.comprovantes_id || [];
-    const temComprovantes = comprovantes.length > 0;
-    const status = consumo.leitura_concessionaria_id?.status || 'N/A';
-    const isPendente = status === 'Pendente';
+function HistoricoRow({ consumo, showAllColumns }) {
+    // Determina se o resíduo é positivo ou negativo para aplicar cor adequada
+    const residuoClass = consumo.residuo > 0 ? "text-green-400" : consumo.residuo < 0 ? "text-red-400" : "text-gray-300";
+    const residualClass = consumo.valor_residual_total > 0 ? "text-green-400" : consumo.valor_residual_total < 0 ? "text-red-400" : "text-gray-300";
 
     return (
         <tr className="hover:bg-blue-900/20 transition-colors">
             <td className="py-3 px-4 text-gray-300">
-                {formatarData(consumo.leitura_concessionaria_id?.data_da_leitura)}
+                {formatarData(consumo.data_leitura_atual)}
             </td>
             <td className="py-3 px-4 text-gray-300">
-                {formatarData(consumo.leitura_concessionaria_id?.mes_de_referencia)}
+                {formatarData(consumo.mes_de_referencia)}
             </td>
             <td className="py-3 px-4 text-gray-300">
-                {consumo.leitura_concessionaria_id?.volume_consumido || 0} m³
+                {consumo.leitura_atual || 0} m³
             </td>
             <td className="py-3 px-4 text-gray-300">
-                {formatarMoeda(consumo.leitura_concessionaria_id?.valor_da_conta)}
+                {consumo.volume_medido || 0} m³
             </td>
-            <td className="py-3 px-4">
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${isPendente
-                    ? 'bg-yellow-900/30 text-yellow-300 border border-yellow-800/60'
-                    : 'bg-green-900/30 text-green-300 border border-green-800/60'
-                    }`}>
-                    {status}
-                </span>
+            {showAllColumns && (
+                <>
+                    <td className="py-3 px-4 text-gray-300">
+                        {consumo.consumo_total || 0} m³
+                    </td>
+                    <td className={`py-3 px-4 ${residuoClass}`}>
+                        {consumo.residuo || 0} m³
+                    </td>
+                </>
+            )}
+            <td className="py-3 px-4 text-gray-300">
+                {formatarMoeda(consumo.valor_da_conta)}
             </td>
-            <td className="py-3 px-4">
-                {temComprovantes ? (
-                    <button
-                        onClick={() => downloadComprovantes(comprovantes)}
-                        className="flex items-center gap-1 px-3 py-1 bg-blue-900/30 hover:bg-blue-800/40 rounded-md text-blue-300 text-xs transition-colors"
-                    >
-                        <FileText size={12} />
-                        <span>Baixar</span>
-                    </button>
-                ) : (
-                    <span className="text-gray-500 text-xs italic">Indisponível</span>
-                )}
+            {showAllColumns && (
+                <>
+                    <td className={`py-3 px-4 ${residualClass}`}>
+                        {formatarMoeda(consumo.valor_residual_total)}
+                    </td>
+                    <td className="py-3 px-4 text-gray-300">
+                        {formatarMoeda(consumo.taxa_garantidora)}
+                    </td>
+                </>
+            )}
+            <td className="py-3 px-4 font-medium text-white">
+                {formatarMoeda(consumo.valor_total)}
             </td>
         </tr>
     );

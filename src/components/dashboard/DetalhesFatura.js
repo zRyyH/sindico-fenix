@@ -1,7 +1,6 @@
 // src/components/dashboard/DetalhesFatura.js
-import { BarChart4, Calendar, Droplets, TrendingUp, DollarSign, FileText, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { BarChart4, Calendar, Droplets, TrendingUp, DollarSign, Calculator, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { formatarData, formatarMoeda } from "@/utils/formatadores";
-import { downloadComprovantes } from "@/utils/download";
 
 export default function DetalhesFatura({ leituraMaisRecente, leituraAnterior, diferencaConsumo, diferencaValor }) {
     return (
@@ -13,14 +12,11 @@ export default function DetalhesFatura({ leituraMaisRecente, leituraAnterior, di
                     <div className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-2 rounded-lg mr-3">
                         <BarChart4 size={20} />
                     </div>
-                    <h2 className="text-xl font-bold text-white">Concessionária</h2>
+                    <h2 className="text-xl font-bold text-white">Detalhes da Conta</h2>
                 </div>
                 <div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${leituraMaisRecente.leitura_concessionaria_id?.status === 'Pendente'
-                        ? 'bg-yellow-900/20 text-yellow-300 border border-yellow-800/60'
-                        : 'bg-green-900/20 text-green-300 border border-green-800/60'
-                        }`}>
-                        {leituraMaisRecente.leitura_concessionaria_id?.status || 'N/A'}
+                    <span className="text-blue-300 text-sm">
+                        {leituraMaisRecente.nome_condominio}
                     </span>
                 </div>
             </div>
@@ -37,7 +33,7 @@ export default function DetalhesFatura({ leituraMaisRecente, leituraAnterior, di
 
                 <div className="space-y-6">
                     <ResumoFinanceiro leituraMaisRecente={leituraMaisRecente} />
-                    <SecaoComprovantes leituraMaisRecente={leituraMaisRecente} />
+                    <DetalhesResiduais leituraMaisRecente={leituraMaisRecente} />
                 </div>
             </div>
         </section>
@@ -56,13 +52,25 @@ function InformacoesLeitura({ leituraMaisRecente }) {
                 <div>
                     <p className="text-sm text-gray-400">Mês de referência</p>
                     <p className="text-lg font-semibold text-white">
-                        {formatarData(leituraMaisRecente.leitura_concessionaria_id?.mes_de_referencia)}
+                        {formatarData(leituraMaisRecente.mes_de_referencia)}
                     </p>
                 </div>
                 <div>
                     <p className="text-sm text-gray-400">Data da leitura</p>
                     <p className="text-lg font-semibold text-white">
-                        {formatarData(leituraMaisRecente.leitura_concessionaria_id?.data_da_leitura)}
+                        {formatarData(leituraMaisRecente.data_leitura_atual)}
+                    </p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">Leitura anterior</p>
+                    <p className="text-lg font-semibold text-white">
+                        {formatarData(leituraMaisRecente.data_leitura_anterior) || "N/A"}
+                    </p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">Próxima leitura</p>
+                    <p className="text-lg font-semibold text-white">
+                        {formatarData(leituraMaisRecente.data_da_proxima_leitura)}
                     </p>
                 </div>
             </div>
@@ -80,15 +88,27 @@ function DetalhesConsumo({ leituraMaisRecente }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <p className="text-sm text-gray-400">Volume medido</p>
+                    <p className="text-sm text-gray-400">Leitura anterior</p>
                     <p className="text-lg font-semibold text-white">
-                        {leituraMaisRecente.leitura_concessionaria_id?.volume_medido || 0} m³
+                        {leituraMaisRecente.leitura_anterior || "N/A"} m³
                     </p>
                 </div>
                 <div>
-                    <p className="text-sm text-gray-400">Volume consumido</p>
+                    <p className="text-sm text-gray-400">Leitura atual</p>
                     <p className="text-lg font-semibold text-white">
-                        {leituraMaisRecente.leitura_concessionaria_id?.volume_consumido || 0} m³
+                        {leituraMaisRecente.leitura_atual || 0} m³
+                    </p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">Volume medido</p>
+                    <p className="text-lg font-semibold text-white">
+                        {leituraMaisRecente.volume_medido || 0} m³
+                    </p>
+                </div>
+                <div>
+                    <p className="text-sm text-gray-400">Consumo total</p>
+                    <p className="text-lg font-semibold text-white">
+                        {leituraMaisRecente.consumo_total || 0} m³
                     </p>
                 </div>
             </div>
@@ -152,11 +172,11 @@ function ResumoFinanceiro({ leituraMaisRecente }) {
                 <h3 className="font-semibold text-emerald-300">Resumo Financeiro</h3>
             </div>
 
-            <div className="space-y-4">
-                <div className="flex justify-between items-center border-b border-gray-700/40 pb-3">
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
                     <span className="text-gray-400">Valor da conta:</span>
-                    <span className="font-semibold text-lg text-white">
-                        {formatarMoeda(leituraMaisRecente.leitura_concessionaria_id?.valor_da_conta)}
+                    <span className="font-semibold text-white">
+                        {formatarMoeda(leituraMaisRecente.valor_da_conta)}
                     </span>
                 </div>
 
@@ -168,18 +188,18 @@ function ResumoFinanceiro({ leituraMaisRecente }) {
                 </div>
 
                 <div className="flex justify-between items-center">
-                    <span className="text-gray-400">Resíduo:</span>
+                    <span className="text-gray-400">Taxa garantidora:</span>
                     <span className="font-semibold text-white">
-                        {leituraMaisRecente.residuo} m³
+                        {formatarMoeda(leituraMaisRecente.taxa_garantidora)}
                     </span>
                 </div>
             </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-700/40">
+            <div className="mt-5 pt-4 border-t border-gray-700/40">
                 <div className="flex justify-between items-center">
                     <span className="text-lg font-medium text-gray-300">Total a pagar:</span>
                     <span className="text-xl font-bold text-emerald-400">
-                        {formatarMoeda(leituraMaisRecente.leitura_concessionaria_id?.valor_da_conta)}
+                        {formatarMoeda(leituraMaisRecente.valor_total)}
                     </span>
                 </div>
             </div>
@@ -187,42 +207,49 @@ function ResumoFinanceiro({ leituraMaisRecente }) {
     );
 }
 
-function SecaoComprovantes({ leituraMaisRecente }) {
-    const comprovantes = leituraMaisRecente.leitura_concessionaria_id?.comprovantes_id || [];
-    const temComprovantes = comprovantes.length > 0;
+function DetalhesResiduais({ leituraMaisRecente }) {
+    // Determina se o resíduo é positivo (sobra) ou negativo (falta)
+    const residuoPositivo = leituraMaisRecente.residuo > 0;
+    const colorClass = residuoPositivo ? "text-green-400" : "text-red-400";
 
     return (
-        <div className="glass-card-glow relative overflow-hidden p-5 backdrop-blur-md border border-indigo-900/40 rounded-xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/20 to-indigo-800/10 -z-10"></div>
+        <div className="glass-card-glow relative overflow-hidden p-5 backdrop-blur-md border border-purple-900/40 rounded-xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 to-purple-800/10 -z-10"></div>
             <div className="flex items-center gap-3 mb-3">
-                <FileText className="text-indigo-400" size={18} />
-                <h3 className="font-semibold text-indigo-300">Comprovantes</h3>
+                <Calculator className="text-purple-400" size={18} />
+                <h3 className="font-semibold text-purple-300">Cálculo de Resíduos</h3>
             </div>
 
-            {temComprovantes ? (
-                <div className="space-y-4">
-                    <p className="text-sm text-gray-400">
-                        {comprovantes.length}
-                        {comprovantes.length === 1
-                            ? ' comprovante disponível'
-                            : ' comprovantes disponíveis'}
-                    </p>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Resíduo:</span>
+                    <span className={`font-semibold ${colorClass}`}>
+                        {leituraMaisRecente.residuo} m³
+                    </span>
+                </div>
 
-                    <button
-                        onClick={() => downloadComprovantes(comprovantes)}
-                        className="w-full bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
-                    >
-                        <FileText size={18} />
-                        <span>Baixar Todos os Comprovantes</span>
-                    </button>
+                <div className="flex justify-between items-center">
+                    <span className="text-gray-400">Valor residual unitário:</span>
+                    <span className={`font-semibold ${colorClass}`}>
+                        {formatarMoeda(leituraMaisRecente.valor_residual_unitario)}
+                    </span>
                 </div>
-            ) : (
-                <div className="bg-gray-800/30 rounded-lg p-4 text-center">
-                    <p className="text-gray-400">
-                        Nenhum comprovante disponível
-                    </p>
+
+                <div className="flex justify-between items-center border-t border-gray-700/40 pt-3 mt-3">
+                    <span className="text-gray-400">Valor residual total:</span>
+                    <span className={`font-semibold ${colorClass}`}>
+                        {formatarMoeda(leituraMaisRecente.valor_residual_total)}
+                    </span>
                 </div>
-            )}
+            </div>
+
+            <div className="mt-4 p-3 bg-gray-800/30 rounded-lg text-xs text-gray-400">
+                <p>
+                    {residuoPositivo
+                        ? "Resíduo positivo indica sobra de água em relação ao volume cobrado pela concessionária."
+                        : "Resíduo negativo indica consumo não faturado em relação ao volume cobrado pela concessionária."}
+                </p>
+            </div>
         </div>
     );
 }

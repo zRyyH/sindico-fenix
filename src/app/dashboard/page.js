@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getCurrentUser, logout } from "@/lib/auth";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import apiClient from "@/lib/axios";
+import { buscarConsumosCondominios } from "@/lib/consumos-api";
 
 // Componentes
 import Header from "@/components/dashboard/Header";
@@ -13,6 +13,7 @@ import ResumoCards from "@/components/dashboard/ResumoCards";
 import DetalhesFatura from "@/components/dashboard/DetalhesFatura";
 import LeituraAnterior from "@/components/dashboard/LeituraAnterior";
 import HistoricoLeituras from "@/components/dashboard/HistoricoLeituras";
+import BalancoMensal from "@/components/dashboard/BalancoMensal";
 import Footer from "@/components/dashboard/Footer";
 
 // Utilitários
@@ -36,12 +37,8 @@ export default function Dashboard() {
     const fetchDadosConsumo = async () => {
         try {
             setIsLoading(true);
-            const response = await apiClient.get(
-                "https://hidro.awpsoft.com.br/items/consumos_condominios?fields=*.*.*&sort=-leitura_concessionaria_id.data_da_leitura"
-            );
-            if (response.data && response.data.data) {
-                setConsumos(response.data.data);
-            }
+            const dadosConsumo = await buscarConsumosCondominios();
+            setConsumos(dadosConsumo);
         } catch (err) {
             console.error("Erro ao buscar dados de consumo:", err);
             setError("Falha ao carregar dados de consumo. Tente novamente.");
@@ -57,14 +54,14 @@ export default function Dashboard() {
     // Calcular diferenças para comparativos
     const diferencaConsumo = leituraMaisRecente && leituraAnterior
         ? calcularDiferenca(
-            leituraMaisRecente.leitura_concessionaria_id?.volume_consumido,
-            leituraAnterior.leitura_concessionaria_id?.volume_consumido
+            leituraMaisRecente.volume_medido,
+            leituraAnterior.volume_medido
         ) : null;
 
     const diferencaValor = leituraMaisRecente && leituraAnterior
         ? calcularDiferenca(
-            leituraMaisRecente.leitura_concessionaria_id?.valor_da_conta,
-            leituraAnterior.leitura_concessionaria_id?.valor_da_conta
+            leituraMaisRecente.valor_da_conta,
+            leituraAnterior.valor_da_conta
         ) : null;
 
     return (
@@ -83,7 +80,7 @@ export default function Dashboard() {
                     {isLoading ? (
                         <LoadingState />
                     ) : error ? (
-                        <ErrorState message={error} />
+                        <ErrorState message={error} onRetry={fetchDadosConsumo} />
                     ) : (
                         <main className="grid grid-cols-1 gap-6 animate-fade-in">
                             {leituraMaisRecente && (
@@ -94,14 +91,22 @@ export default function Dashboard() {
                                 />
                             )}
 
-                            {leituraMaisRecente && (
-                                <DetalhesFatura
-                                    leituraMaisRecente={leituraMaisRecente}
-                                    leituraAnterior={leituraAnterior}
-                                    diferencaConsumo={diferencaConsumo}
-                                    diferencaValor={diferencaValor}
-                                />
-                            )}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {leituraMaisRecente && (
+                                    <DetalhesFatura
+                                        leituraMaisRecente={leituraMaisRecente}
+                                        leituraAnterior={leituraAnterior}
+                                        diferencaConsumo={diferencaConsumo}
+                                        diferencaValor={diferencaValor}
+                                    />
+                                )}
+
+                                {leituraMaisRecente && (
+                                    <BalancoMensal
+                                        leituraMaisRecente={leituraMaisRecente}
+                                    />
+                                )}
+                            </div>
 
                             {leituraAnterior && (
                                 <LeituraAnterior
